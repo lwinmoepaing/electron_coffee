@@ -1,0 +1,128 @@
+@import url("https://fonts.googleapis.com/css2?family=Tilt+Neon&display=swap");
+
+table,
+th,
+tr,
+td {
+  border-width: 0px !important;
+  font-family: "Tilt Neon", sans-serif;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0 0.3em;
+}
+
+tr {
+  background-color: #f4f4f4 !important;
+  cursor: pointer;
+}
+
+thead > tr {
+  cursor: default;
+}
+
+th,
+td {
+  margin: 1rem 0;
+}
+
+tr > th:first-child,
+tr > td:first-child {
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+tr > th:last-child,
+tr > td:last-child {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+/* @import url("https://fonts.googleapis.com/css?family=Quicksand&display=swap"); */
+body {
+  font-family: "Tilt Neon", sans-serif;
+}
+
+button {
+  font-family: "Tilt Neon", sans-serif;
+  border-radius: 10px !important;
+}
+
+h1 {
+  font-family: "Quicksand", sans-serif;
+}
+
+.coffee-table tr th:nth-child(2),
+.coffee-table tr td:nth-child(2),
+.coffee-table tr th:nth-child(3),
+.coffee-table tr td:nth-child(3) {
+  min-width: 140px;
+}
+
+.form-label {
+  margin-bottom: 0;
+}
+
+.form-control {
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background-color: #4691ff;
+  border-color: #4691ff;
+}
+
+.btn-primary:hover {
+  background-color: #2c82ff;
+  border-color: #2c82ff;
+}
+
+.btn-danger {
+  background-color: #ff4d5e;
+  border-color: #ff4d5e;
+}
+
+.btn-danger:hover {
+  background-color: #fc394b;
+  border-color: #fc394b;
+}
+
+.btn-success {
+  background-color: #4fc990;
+  border-color: #4fc990;
+}
+
+.btn-success:hover {
+  background-color: #4fc990;
+  border-color: #4fc990;
+}
+
+.order-bg {
+  background-color: #f4f4f4 !important;
+  border-radius: 6px;
+  padding: 0.6em 0.5em;
+  margin: 0.5rem 0;
+}
+
+.order-input {
+  display: inline-block;
+  border: 1px solid #dfdfdf;
+  border-radius: 6px;
+  width: 35px;
+  text-align: center;
+}
+
+.order-input::-webkit-outer-spin-button,
+.order-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.order-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.order-bg > .col:nth-child(2) {
+  min-width: 132px;
+}
