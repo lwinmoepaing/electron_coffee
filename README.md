@@ -19,8 +19,9 @@ Really Easy to Start with Coffee-Order_Maker:
 
 ```mermaid
 graph LR
-A[Create Coffee] --> Z(Update Orders)  --> D
-A --> C(Adding Transactions)
-D{Create Submit}
-C --> D
+A[Create Coffee]
+Z(Update Orders)
+C(Adding Transactions)
+D((Create Submit))
+A --> Z --> D --> C --> A
 ```
