@@ -33,6 +33,7 @@ const orderUpdateType = {
   RESET: "RESET",
 };
 
+// All Stores
 const configStore = new Store({
   counter: 1,
   currency: "MMK",
@@ -67,6 +68,13 @@ const transactionStore = new Store([]);
 
 const tabStore = new Store({ name: "coffee-tab" });
 
+/**
+ * All Coffee Services
+ *
+ * Create New Coffee
+ * Update Coffee
+ * Delete Coffee
+ */
 function addNewCoffee(name, price) {
   const newData = {
     id: Math.random() + "",
@@ -78,7 +86,7 @@ function addNewCoffee(name, price) {
   const isValidType = checkIsValidTypes(newData, dataType.coffeeDataType);
 
   if (!isValidType) {
-    console.log("Type is not valid");
+    alert("Type is not valid");
     return;
   }
 
@@ -86,16 +94,23 @@ function addNewCoffee(name, price) {
 
   const isThereSameName = coffees.some((coffee) => coffee.name === name);
   if (isThereSameName) {
-    console.log("Name is not valid");
+    alert("Name is not valid");
+    return;
+  }
+
+  if (!newData.name && !newData.name.trim()) {
+    alert("Name is not valid");
     return;
   }
 
   if (price <= 0) {
-    console.log("Value is not valid");
+    alert("Value is not valid");
     return;
   }
 
   coffeeStore.update([...coffees, newData]);
+
+  showNotification("Hey! New Cup of Coffee", `Successfully New: ${name}`);
   return coffeeStore.get();
 }
 
@@ -126,6 +141,11 @@ function updateCoffee(id, dataObj) {
     coffeeId: updateCoffeeData.id,
     type: orderUpdateType.COFFEEUPDATE,
   });
+
+  showNotification(
+    `Updated ${dataObj.name}`,
+    `Successfully Updated: ${dataObj.name}`
+  );
   return coffeeStore.get();
 }
 
@@ -140,6 +160,16 @@ function removeCoffee(id) {
   coffeeStore.update(coffeeList.filter((coffee) => coffee.id !== id));
   return coffeeStore.get();
 }
+
+/**
+ * All Order Services
+ *
+ * Order Reset
+ * Order Increment
+ * Order Decrement
+ * Order Update
+ * Order Update Quantity
+ */
 
 function orderUpdate({
   coffeeId,
@@ -246,6 +276,10 @@ function orderUpdate({
   }
 }
 
+/**
+ * All Transaction Services
+ *
+ */
 function saveOrder() {
   const configs = configStore.get();
   configStore.update({
@@ -253,10 +287,15 @@ function saveOrder() {
     counter: configs.counter + 1,
   });
 
+  const newOrder = orderStore.get();
   const transactions = transactionStore.get();
-  transactionStore.update([orderStore.get(), ...transactions]);
+  transactionStore.update([newOrder, ...transactions]);
 
   orderUpdate({ type: orderUpdateType.RESET });
+  showNotification(
+    `Transaction Added: ${newOrder.id}`,
+    `Successfully Added New one.`
+  );
 }
 
 /**
@@ -348,32 +387,102 @@ function prettyLog(title, data) {
   console.log("================================\n");
 }
 
-//  All Ui Functions
+function createEle(configs) {
+  const elementName = configs.element ? configs.element : "div";
+  const type = configs.type ? configs.type : "";
+  const classList =
+    configs.classList && configs.classList.length ? configs.classList : [];
+  const events = configs.events ? configs.events : {};
+  const value = configs.value ? configs.value : "";
+  const appends =
+    configs.appends && configs.appends.length ? configs.appends : [];
+
+  const initElement = document.createElement(elementName);
+  classList.forEach((item) => {
+    initElement.classList.add(item);
+  });
+
+  initElement.value = value;
+  initElement.innerHTML = value;
+  initElement.type = type;
+
+  Object.keys(events).map((key) => {
+    initElement.addEventListener(key, events[key]);
+  });
+
+  appends.map((appendChild) => {
+    initElement.appendChild(appendChild);
+  });
+
+  return {
+    appends: (appendChilds) => {
+      appendChilds.map((appendChild) => {
+        initElement.appendChild(appendChild);
+      });
+    },
+    element: initElement,
+  };
+}
+
+function showNotification(
+  title = "Coffee Maker",
+  body = "Welcome to Coffee Maker!"
+) {
+  const isSupport = "Notification" in window;
+  const options = {
+    title,
+    body,
+    subtitle: body,
+    replyPlaceholder: body,
+  };
+
+  if (!isSupport) {
+    // Os Is not supported
+    return;
+  }
+
+  prettyLog("Show Notification", options);
+
+  const isAlreadyAccessPermission = Notification.permission === "granted";
+
+  if (isAlreadyAccessPermission) {
+    new Notification(title, options);
+    return;
+  }
+
+  const isNotAccessPermission = Notification.permission !== "denied";
+
+  if (isNotAccessPermission) {
+    Notification.requestPermission().then(() => {
+      if (Notification.permission === "granted") {
+        new Notification(title, options);
+      }
+    });
+  }
+}
+
+//  All Ui Update Methods
 function updateCoffeeUI(containerIDs) {
   for (let index = 0; index < containerIDs.length; index++) {
     const containerID = containerIDs[index];
     const coffeeContainer = document.getElementById(containerID);
+    coffeeContainer.innerHTML = "";
     const coffeeList = coffeeStore.get();
     const currency = configStore.get().currency;
     const editingCoffee = coffeeEditStore.get();
     const isEditing = editingCoffee.isEdit;
 
-    coffeeContainer.innerHTML = "";
-
     coffeeList.forEach((coffee) => {
-      const tr = document.createElement("tr");
-      const th = document.createElement("th");
-      th.innerHTML = "#";
+      const th = createEle({ element: "th", value: "#" }).element;
 
       const nameTd = document.createElement("td");
       if (coffee.id === editingCoffee.id) {
-        const editNameInput = document.createElement("input");
-        editNameInput.classList.add("form-control", "form-control-sm");
-        editNameInput.value = editingCoffee.name;
-
-        editNameInput.addEventListener("keyup", (e) => {
-          editingCoffee.name = e.target.value;
-        });
+        const editNameInput = createEle({
+          element: "input",
+          classList: ["form-control", "form-control-sm"],
+          value: editingCoffee.name,
+          events: { keyup: (e) => (editingCoffee.name = e.target.value) },
+        }).element;
         nameTd.appendChild(editNameInput);
       } else {
         nameTd.innerHTML = coffee.name;
@@ -381,54 +490,61 @@ function updateCoffeeUI(containerIDs) {
 
       const priceTd = document.createElement("td");
       if (coffee.id === editingCoffee.id) {
-        const editPriceInput = document.createElement("input");
-        editPriceInput.classList.add("form-control", "form-control-sm");
-        editPriceInput.value = editingCoffee.price;
-
-        editPriceInput.addEventListener("keyup", (e) => {
-          editingCoffee.price = e.target.value;
-        });
+        const editPriceInput = createEle({
+          element: "input",
+          classList: ["form-control", "form-control-sm"],
+          value: editingCoffee.price,
+          events: { keyup: (e) => (editingCoffee.price = e.target.value) },
+        }).element;
         priceTd.appendChild(editPriceInput);
       } else {
         priceTd.innerHTML = coffee.price + " " + currency;
       }
 
-      const editButton = document.createElement("button");
-      editButton.innerHTML = "Edit";
-      editButton.classList.add("btn", "btn-success", "btn-sm", "mx-1");
-      editButton.addEventListener("click", () => {
-        coffeeEditStore.update({ isEdit: true, ...coffee });
-      });
+      const editButton = createEle({
+        element: "button",
+        value: "Edit",
+        classList: ["btn", "btn-success", "btn-sm", "mx-1"],
+        events: {
+          click: (e) => coffeeEditStore.update({ isEdit: true, ...coffee }),
+        },
+      }).element;
 
-      const orderButton = document.createElement("button");
-      orderButton.innerHTML = "Order";
-      orderButton.classList.add("btn", "btn-primary", "btn-sm", "mx-1");
-      orderButton.addEventListener("click", () => {
-        orderUpdate({
-          coffeeId: coffee.id,
-          type: orderUpdateType.INCREMENT,
-        });
-      });
+      const orderButton = createEle({
+        element: "button",
+        value: "Order",
+        classList: ["btn", "btn-primary", "btn-sm", "mx-1"],
+        events: {
+          click: (e) =>
+            orderUpdate({
+              coffeeId: coffee.id,
+              type: orderUpdateType.INCREMENT,
+            }),
+        },
+      }).element;
 
-      const saveButton = document.createElement("button");
-      saveButton.innerHTML = "Save";
-      saveButton.classList.add("btn", "btn-success", "btn-sm", "mx-2");
-      saveButton.addEventListener("click", () => {
-        const updatedCoffeeData = { ...coffee };
-        updatedCoffeeData.name = editingCoffee.name;
-        updatedCoffeeData.price = parseFloat(editingCoffee.price);
-        const isUpdated = updateCoffee(coffee.id, updatedCoffeeData);
-        if (isUpdated) {
-          coffeeEditStore.update({
-            isEdit: false,
-            ...updatedCoffeeData,
-            id: "---",
-          });
-        }
-      });
+      const saveButton = createEle({
+        element: "button",
+        value: "Save",
+        classList: ["btn", "btn-success", "btn-sm", "mx-2"],
+        events: {
+          click: () => {
+            const updatedCoffeeData = { ...coffee };
+            updatedCoffeeData.name = editingCoffee.name;
+            updatedCoffeeData.price = parseFloat(editingCoffee.price);
+            const isUpdated = updateCoffee(coffee.id, updatedCoffeeData);
+            if (isUpdated) {
+              coffeeEditStore.update({
+                isEdit: false,
+                ...updatedCoffeeData,
+                id: "---",
+              });
+            }
+          },
+        },
+      }).element;
 
       const actionTd = document.createElement("td");
-
       if (isEditing) {
         // Save Button
         if (coffee.id === editingCoffee.id) {
@@ -438,20 +554,18 @@ function updateCoffeeUI(containerIDs) {
         actionTd.appendChild(editButton);
       }
 
-      // actionTd.appendChild(disabledButton);
-
       if (coffee.orderable) {
         actionTd.appendChild(orderButton);
       }
 
-      tr.appendChild(th);
-      tr.appendChild(nameTd);
-      tr.appendChild(priceTd);
-      tr.appendChild(actionTd);
+      const tr = createEle({
+        element: "tr",
+        appends: [th, nameTd, priceTd, actionTd],
+        events: {
+          // dblclick: () => coffeeEditStore.update({ isEdit: true, ...coffee }),
+        },
+      }).element;
 
-      tr.addEventListener("dblclick", () => {
-        coffeeEditStore.update({ isEdit: true, ...coffee });
-      });
       coffeeContainer.appendChild(tr);
     });
   }
@@ -469,96 +583,102 @@ function updateOrderUI() {
 
   const orderList = orderData.orderList;
   orderList.map((coffee) => {
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("row", "order-bg");
+    const nameDiv = createEle({
+      classList: ["col"],
+      value: coffee.name,
+    }).element;
 
-    const nameDiv = document.createElement("div");
-    nameDiv.classList.add("col");
-    nameDiv.innerHTML = coffee.name;
+    const actionMinusDiv = createEle({
+      classList: ["btn", "btn-primary", "btn-sm", "mx-1"],
+      value: "-",
+      events: {
+        click: () => {
+          orderUpdate({
+            coffeeId: coffee.id,
+            type: orderUpdateType.DECREMENT,
+          });
+        },
+      },
+    }).element;
 
-    const actionDiv = document.createElement("div");
-    actionDiv.classList.add("col", "text-end");
+    const actionQuantityDiv = createEle({
+      element: "input",
+      type: "number",
+      value: coffee.quantity,
+      classList: ["order-input"],
+      events: {
+        blur: (e) =>
+          orderUpdate({
+            coffeeId: coffee.id,
+            type: orderUpdateType.UPDATEQTY,
+            changeQty:
+              e.target.value && !isNaN(e.target.value)
+                ? parseInt(e.target.value)
+                : coffee.quantity,
+          }),
+      },
+    }).element;
 
-    const actionMinusDiv = document.createElement("div");
-    actionMinusDiv.classList.add("btn", "btn-primary", "btn-sm", "mx-1");
-    actionMinusDiv.innerHTML = "-";
-    actionMinusDiv.addEventListener("click", () => {
-      orderUpdate({
-        coffeeId: coffee.id,
-        type: orderUpdateType.DECREMENT,
-      });
-    });
+    const actionPlusDiv = createEle({
+      classList: ["btn", "btn-primary", "btn-sm", "mx-1"],
+      value: "+",
+      events: {
+        click: () =>
+          orderUpdate({
+            coffeeId: coffee.id,
+            type: orderUpdateType.INCREMENT,
+          }),
+      },
+    }).element;
 
-    const actionQuantityDiv = document.createElement("input");
-    actionQuantityDiv.setAttribute("value", coffee.quantity);
-    actionQuantityDiv.setAttribute("type", "number");
-    actionQuantityDiv.classList.add("order-input");
-    actionQuantityDiv.addEventListener("blur", (e) => {
-      orderUpdate({
-        coffeeId: coffee.id,
-        type: orderUpdateType.UPDATEQTY,
-        changeQty:
-          e.target.value && !isNaN(e.target.value)
-            ? parseInt(e.target.value)
-            : coffee.quantity,
-      });
-    });
+    const actionDiv = createEle({
+      classList: ["col", "text-end"],
+      appends: [actionMinusDiv, actionQuantityDiv, actionPlusDiv],
+    }).element;
 
-    const actionPlusDiv = document.createElement("div");
-    actionPlusDiv.classList.add("btn", "btn-primary", "btn-sm", "mx-1");
-    actionPlusDiv.innerHTML = "+";
-    actionPlusDiv.addEventListener("click", () => {
-      orderUpdate({
-        coffeeId: coffee.id,
-        type: orderUpdateType.INCREMENT,
-      });
-    });
+    const priceDiv = createEle({
+      classList: ["col", "text-end"],
+      value: coffee.totalAmount + " " + currency,
+    }).element;
 
-    actionDiv.appendChild(actionMinusDiv);
-    actionDiv.appendChild(actionQuantityDiv);
-    actionDiv.appendChild(actionPlusDiv);
-
-    const priceDiv = document.createElement("div");
-    priceDiv.classList.add("col", "text-end");
-    priceDiv.innerHTML = coffee.totalAmount + " " + currency;
-
-    wrapper.appendChild(nameDiv);
-    wrapper.appendChild(actionDiv);
-    wrapper.appendChild(priceDiv);
+    const wrapper = createEle({
+      classList: ["row", "order-bg"],
+      appends: [nameDiv, actionDiv, priceDiv],
+    }).element;
 
     coffeeListContainer.appendChild(wrapper);
   });
 
-  const totalAmountRowDiv = document.createElement("div");
-  totalAmountRowDiv.classList.add("row", "order-bg");
+  const colDiv = createEle({
+    classList: ["col"],
+  }).element;
 
-  const colDiv = document.createElement("div");
-  colDiv.classList.add("col");
+  const totalAmountTextDiv = createEle({
+    classList: ["col", "text-center"],
+    value: "Total Amount",
+  }).element;
 
-  const totalAmountTextDiv = document.createElement("div");
-  totalAmountTextDiv.classList.add("col", "text-center");
-  totalAmountTextDiv.innerHTML = "Total Amount";
+  const totamAmountPriceDiv = createEle({
+    classList: ["col", "text-end"],
+    value: orderData.totalAmount + " " + currency,
+  }).element;
 
-  const totamAmountPriceDiv = document.createElement("div");
-  totamAmountPriceDiv.classList.add("col", "text-end");
-  totamAmountPriceDiv.innerHTML = orderData.totalAmount + " " + currency;
-
-  totalAmountRowDiv.appendChild(colDiv);
-  totalAmountRowDiv.appendChild(totalAmountTextDiv);
-  totalAmountRowDiv.appendChild(totamAmountPriceDiv);
+  const totalAmountRowDiv = createEle({
+    classList: ["row", "order-bg"],
+    appends: [colDiv, totalAmountTextDiv, totamAmountPriceDiv],
+  }).element;
 
   coffeeListContainer.appendChild(totalAmountRowDiv);
 
-  const saveButton = document.createElement("button");
-  saveButton.classList.add("btn", "btn-primary", "btn-lg", "w-100");
-  saveButton.innerHTML = "Checkout !";
-  saveButton.addEventListener("click", () => {
-    if (orderList.length > 0) {
-      saveOrder();
-    } else {
-      alert("Please Input Order");
-    }
-  });
+  const saveButton = createEle({
+    element: "button",
+    classList: ["btn", "btn-primary", "btn-lg", "w-100"],
+    value: "Checkout !",
+    events: {
+      click: () =>
+        orderList.length > 0 ? saveOrder() : alert("Please Input Order"),
+    },
+  }).element;
 
   coffeeListContainer.appendChild(saveButton);
 }
@@ -570,28 +690,38 @@ function updateTransactionUI() {
   const currency = configStore.get().currency;
 
   transactions.forEach((order) => {
-    const tr = document.createElement("tr");
-    const th = document.createElement("th");
-    th.innerHTML = "#";
+    const th = createEle({
+      element: "th",
+      value: "#",
+    }).element;
 
-    const orderIdTd = document.createElement("td");
-    orderIdTd.innerHTML = order.id;
-    const orderDetailTd = document.createElement("td");
-    orderDetailTd.innerHTML = order.orderList.reduce((prev, nextOrder) => {
-      return `${prev} ${nextOrder.name}_(${nextOrder.quantity}x ${nextOrder.price})`;
-    }, "");
-    const orderTotalTd = document.createElement("td");
-    orderTotalTd.innerHTML = order.totalAmount + " " + currency;
+    const orderIdTd = createEle({
+      element: "td",
+      value: order.id,
+    }).element;
 
-    tr.appendChild(th);
-    tr.appendChild(orderIdTd);
-    tr.appendChild(orderDetailTd);
-    tr.appendChild(orderTotalTd);
+    const orderDetailTd = createEle({
+      element: "td",
+      value: order.orderList.reduce((prev, nextOrder) => {
+        return `${prev} ${nextOrder.name}_(${nextOrder.quantity}x ${nextOrder.price})`;
+      }, ""),
+    }).element;
+
+    const orderTotalTd = createEle({
+      element: "td",
+      value: order.totalAmount + " " + currency,
+    }).element;
+
+    const tr = createEle({
+      element: "tr",
+      appends: [th, orderIdTd, orderDetailTd, orderTotalTd],
+    }).element;
 
     transactionContainer.appendChild(tr);
   });
 }
 
+// All Input Listeners
 const newCoffeeForm = document.getElementById("add-coffee-form");
 newCoffeeForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -612,6 +742,7 @@ newCoffeeForm.addEventListener("submit", (e) => {
   }
 });
 
+// When New Coffee Form Fields are clicked
 const eachNewCoffeeField = document.querySelectorAll(".add-coffee-field");
 if (eachNewCoffeeField.length) {
   eachNewCoffeeField.forEach((field) => {
@@ -631,6 +762,7 @@ if (eachNewCoffeeField.length) {
   });
 }
 
+// When Tablinks are clicked
 const tabLinks = document.querySelectorAll(".nav-link");
 if (tabLinks.length) {
   tabLinks.forEach((tab) => {
@@ -646,6 +778,7 @@ const allCoffeeContainers = ["coffee-container"];
 coffeeStore.subscribe((data) => {
   updateCoffeeUI(allCoffeeContainers);
   // updateCoffeeLogUI();
+
   saveStorage("coffeeStore", data);
 });
 
@@ -714,6 +847,9 @@ function updateCoffeeLogUI() {
   logContainer.innerHTML = JSON.stringify(coffees, null, 2);
 }
 
+/**
+ * All LocalStorage Functions
+ */
 function getStorage(keyName) {
   const data = localStorage.getItem(keyName);
   try {
@@ -735,10 +871,6 @@ function init() {
   const transactions = getStorage("transactionStore");
   const configs = getStorage("configStore");
 
-  [coffees, order, transactions].map((data) => {
-    console.log(data);
-  });
-
   if (coffees) {
     coffeeStore.update(coffees);
   }
@@ -757,8 +889,8 @@ function init() {
 
   updateCoffeeUI(allCoffeeContainers);
   updateOrderUI();
-  // updateLogUI();
-  // updateCoffeeLogUI();
+
+  showNotification("Initial Start");
 }
 
 init();
